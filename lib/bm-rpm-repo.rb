@@ -1,30 +1,33 @@
 class RepositoryHost
-    attr_reader :host, :path
+    attr_reader :host, :user, :path
     def initialize(args)
         @host   = args[:host]
+        @user   = args[:user]
         @path   = args[:path]
-        self.checkConnection
     end
 
     def sshCmd(command)
-        puts "#{host}: #{command}"
+        %x{ssh #{self.user}@#{self.host} #{command}}
     end
-    
+
+    def cmd(command)
+        %x{#{command}}
+    end
+
     def canConnect?
-        true
+        self.cmd "ping -c 1 #{self.host}"
+        $?.exitstatus == 0 ? true : false
     end
 
     def checkConnection
-        if canConnect?
-            puts "Connection to '#{host}' established."
-        else
-            puts "Can't connect to '#{host}'."
+        if ! self.canConnect?
+            puts "Can't connect to '#{self.host}'."
             exit
         end
     end
 
-    def listRepositoryNames
-        ['adi-stable','adi-unstable', 'adi-testing']
+    def listRepositories
+        self.sshCmd("ls #{self.path}").split
     end
 end
 
@@ -35,7 +38,7 @@ class Repositories
     end
 
     def list
-        @host.listRepositoryNames.each do |repositoryName|
+        @host.listRepositories.each do |repositoryName|
             repository = Repository.new(:host => @host, :name => repositoryName)
             puts repository.name
             repository.listRpms.each { |rpm| puts '    ' + rpm }
@@ -59,18 +62,4 @@ class Repository
     def listRpms
         ['websphere-1.0-1.rpm','balancesuite-1.0-1.rpm', 'birt-customizing-1.0-1.rpm']
     end
-end
-
-bmrepo = RepositoryHost.new(:host => 'bm-repo.lan.tarent.de', :path => '/var/www/RH6')
-
-puts 'Repo Creation'
-Repository.new(:host => bmrepo, :name => 'adi-unstable').create
-
-puts "\nRepo listing"
-puts bmrepo.listRepositoryNames
-
-puts "\nRPM listing"
-Repositories.new(:host => bmrepo).list
-
-while true
 end

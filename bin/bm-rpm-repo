@@ -1,0 +1,13 @@
+#!/usr/bin/ruby
+require 'bm-rpm-repo'
+
+bmrepo = RepositoryHost.new(:host => 'bm-repo.lan.tarent.de', :path => '/var/www/RH6')
+
+puts 'Repo Creation'
+Repository.new(:host => bmrepo, :name => 'adi-unstable').create
+
+puts "\nRepo listing"
+puts bmrepo.listRepositoryNames
+
+puts "\nRPM listing"
+Repositories.new(:host => bmrepo).list
