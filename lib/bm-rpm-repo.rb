@@ -31,6 +31,31 @@ class RepositoryHost
     end
 end
 
+class Repository
+    attr_reader :host, :name, :path
+    def initialize(args)
+        @host   = args[:host]
+        @name   = args[:name]
+    end
+
+    def repositoryPath
+        @host.path + '/' + @name
+    end
+
+    def rpmPath
+        self.repositoryPath + '/' + 'RPMS'
+    end
+
+    def listRpms
+        @host.sshCmd("ls #{rpmPath}").split
+    end
+
+    def create
+        puts "Creating repository in '#{host.path}/#{name}'."
+        host.sshCmd "createrepo -d #{host.path}/#{name}"
+    end
+end
+
 class Repositories
     attr_reader :host
     def initialize(args)
@@ -44,22 +69,5 @@ class Repositories
             repository.listRpms.each { |rpm| puts '    ' + rpm }
         end
 
-    end
-end
-
-class Repository
-    attr_reader :host, :name
-    def initialize(args)
-        @host   = args[:host]
-        @name   = args[:name]
-    end
-
-    def create
-        puts "Creating repository in '#{host.path}/#{name}'."
-        host.sshCmd "createrepo -d #{host.path}/#{name}"
-    end
-
-    def listRpms
-        ['websphere-1.0-1.rpm','balancesuite-1.0-1.rpm', 'birt-customizing-1.0-1.rpm']
     end
 end
